@@ -7,4 +7,4 @@
 // Tài khoản đăng nhập MQTT Broker bạn vừa thiết lập ở bước trước
 #define MQTT_USER "smart_garden_user"
 #define MQTT_PASS "hieu21032004"
-#endif
+#endif  

@@ -6,18 +6,22 @@
 
 #define DHTTYPE DHT11
 
-DHT dht(DHT_PIN, DHTTYPE);
+DHT dht1(DHT_PIN_1, DHTTYPE);
+DHT dht2(DHT_PIN_2, DHTTYPE);
 
 void initDHT() {
-    dht.begin();
+    dht1.begin();
+    dht2.begin();
 }
 
-float readTemperature() {
-    return dht.readTemperature();
+float readTemperature(int sensorIndex) {
+    if (sensorIndex == 1) return dht1.readTemperature();
+    return dht2.readTemperature();
 }
 
-float readHumidity() {
-    return dht.readHumidity();
+float readHumidity(int sensorIndex) {
+    if (sensorIndex == 1) return dht1.readHumidity();
+    return dht2.readHumidity();
 }
 
 #endif
