@@ -110,18 +110,18 @@ void reconnect() {
 }
 
 // --- LOGIC BẢO VỆ MÁY BƠM ---
-void autoIrrigationControl() {
-    int waterVal = readWaterLevel(WATER_SENSOR_PIN_1);
+// void autoIrrigationControl() {
+//     int waterVal = readWaterLevel(WATER_SENSOR_PIN_1);
 
-    // 1. Kiểm tra an toàn mực nước (Cạn nước thì tắt ngay lập tức để bảo vệ phần cứng)
-    if (waterVal < 200) { 
-        if (digitalRead(PUMP_PIN) == HIGH) {
-            digitalWrite(PUMP_PIN, LOW);
-            Serial.println("TỰ ĐỘNG NGẮT: Bể hết nước! Ngắt bơm chống cháy.");
-        }
-        return; 
-    }
-}
+//     // 1. Kiểm tra an toàn mực nước (Cạn nước thì tắt ngay lập tức để bảo vệ phần cứng)
+//     if (waterVal < 200) { 
+//         if (digitalRead(PUMP_PIN) == HIGH) {
+//             digitalWrite(PUMP_PIN, LOW);
+//             Serial.println("TỰ ĐỘNG NGẮT: Bể hết nước! Ngắt bơm chống cháy.");
+//         }
+//         return; 
+//     }
+// }
 
 void setup() {
     Serial.begin(115200);
@@ -145,7 +145,7 @@ void loop() {
     client.loop();
 
     // Chạy logic tự động kiểm tra và điều khiển bơm liên tục
-    autoIrrigationControl();
+    // autoIrrigationControl();
 
     // Gửi dữ liệu các cảm biến lên Server định kỳ
     unsigned long now = millis();
