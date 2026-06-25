@@ -4,7 +4,7 @@
 #include <DHT.h>
 #include "../config/pins.h"
 
-#define DHTTYPE DHT11
+#define DHTTYPE DHT22
 
 DHT dht1(DHT_PIN_1, DHTTYPE);
 DHT dht2(DHT_PIN_2, DHTTYPE);

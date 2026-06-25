@@ -16,12 +16,12 @@
 WiFiClient espClient;
 PubSubClient client(espClient);
 unsigned long lastMsg = 0;
-#define MSG_INTERVAL 10000 // Gửi cảm biến định kỳ mỗi 5 phút (300000 ms)
+#define MSG_INTERVAL 5000 // Gửi cảm biến định kỳ mỗi 5 phút (300000 ms)
 
 // --- HÀM QUY ĐỔI ĐỘ ẨM ĐẤT SANG PHẦN TRĂM (%) ---
 int getSoilMoisturePercent(int analogVal) {
     // Bạn đo thực tế cảm biến đất của bạn và điền vào đây:
-    const int dryValue = 3200; // Giá trị khi cảm biến khô hoàn toàn ngoài không khí
+    const int dryValue = 2625; // Giá trị khi cảm biến khô hoàn toàn ngoài không khí
     const int wetValue = 1200; // Giá trị khi cắm cảm biến ngập vào nước
     
     int percent = map(analogVal, dryValue, wetValue, 0, 100);
@@ -60,14 +60,6 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
         message += (char)payload[i];
     }
     Serial.println(message);
-
-    // Kiểm tra mực nước an toàn trước khi cho phép bật bơm
-    int waterVal = readWaterLevel(WATER_SENSOR_PIN_1);
-    if (waterVal < 200) { // Nếu bể cạn nước (< 5mm)
-        Serial.println("CẢNH BÁO: Không thể bật bơm vì bể đang cạn nước!");
-        digitalWrite(PUMP_PIN, LOW); // Luôn ngắt bơm để bảo vệ
-        return;
-    }
 
     // Thực hiện bật/tắt bơm từ nút nhấn trên Web gửi xuống
     if (message.indexOf("\"pump\":1") >= 0) {
@@ -112,7 +104,7 @@ void reconnect() {
 // --- LOGIC BẢO VỆ MÁY BƠM ---
 // void autoIrrigationControl() {
 //     int waterVal = readWaterLevel(WATER_SENSOR_PIN_1);
-
+// 
 //     // 1. Kiểm tra an toàn mực nước (Cạn nước thì tắt ngay lập tức để bảo vệ phần cứng)
 //     if (waterVal < 200) { 
 //         if (digitalRead(PUMP_PIN) == HIGH) {
@@ -175,16 +167,18 @@ void loop() {
         // ---- ĐẤT 1 ----
         int soil1 = readSoilMoisture(SOIL_SENSOR_PIN_1);
         if (soil1 > 0 && soil1 < 4095) {
+            int soilPercent1 = getSoilMoisturePercent(soil1);
             if (!firstField) payload += ",";
-            payload += "\"soilMoisture1\":" + String(soil1);
+            payload += "\"soilMoisture1\":" + String(soilPercent1);
             firstField = false;
         }
 
         // ---- ĐẤT 2 ----
         if (HAS_SOIL_2) {
             int soil2 = readSoilMoisture(SOIL_SENSOR_PIN_2);
+            int soilPercent2 = getSoilMoisturePercent(soil2);
             if (!firstField) payload += ",";
-            payload += "\"soilMoisture2\":" + String(soil2);
+            payload += "\"soilMoisture2\":" + String(soilPercent2);
             firstField = false;
         }
 
