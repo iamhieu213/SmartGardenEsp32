@@ -166,7 +166,7 @@ void loop() {
 
         // ---- ĐẤT 1 ----
         int soil1 = readSoilMoisture(SOIL_SENSOR_PIN_1);
-        if (soil1 > 0 && soil1 < 4095) {
+        if (soil1 > 0 && soil1 < 2700) {
             int soilPercent1 = getSoilMoisturePercent(soil1);
             if (!firstField) payload += ",";
             payload += "\"soilMoisture1\":" + String(soilPercent1);
@@ -184,7 +184,7 @@ void loop() {
 
         // ---- NƯỚC 1 (Gửi ngầm lên để Server lưu trữ) ----
         int water1 = readWaterLevel(WATER_SENSOR_PIN_1);
-        if (water1 > 0) {
+        if (water1 >= 0) {
             if (!firstField) payload += ",";
             payload += "\"waterLevel1\":" + String(water1);
             firstField = false;
