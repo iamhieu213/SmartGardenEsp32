@@ -30,6 +30,21 @@ int getSoilMoisturePercent(int analogVal) {
     return percent;
 }
 
+// --- HÀM QUY ĐỔI MỰC NƯỚC SANG MILIMET (mm) ---
+int getWaterLevelMm(int analogVal) {
+    // Cấu hình dựa trên đo đạc thực tế cảm biến của bạn:
+    const int dryValue = 200;  // Giá trị analog tương ứng với cạn nước (0mm)
+    const int maxValue = 2800; // Giá trị analog khi ngập sâu tối đa (40mm)
+    const int maxMm = 40;      // Chiều dài vạch đo cảm biến (40mm)
+    
+    if (analogVal < dryValue) return 0;
+    
+    int mm = map(analogVal, dryValue, maxValue, 0, maxMm);
+    if (mm < 0) mm = 0;
+    if (mm > maxMm) mm = maxMm;
+    return mm;
+}
+
 // --- THIẾT LẬP KẾT NỐI WIFI ---
 void setup_wifi() {
     delay(10);
@@ -102,18 +117,26 @@ void reconnect() {
 }
 
 // --- LOGIC BẢO VỆ MÁY BƠM ---
-// void autoIrrigationControl() {
-//     int waterVal = readWaterLevel(WATER_SENSOR_PIN_1);
-// 
-//     // 1. Kiểm tra an toàn mực nước (Cạn nước thì tắt ngay lập tức để bảo vệ phần cứng)
-//     if (waterVal < 200) { 
-//         if (digitalRead(PUMP_PIN) == HIGH) {
-//             digitalWrite(PUMP_PIN, LOW);
-//             Serial.println("TỰ ĐỘNG NGẮT: Bể hết nước! Ngắt bơm chống cháy.");
-//         }
-//         return; 
-//     }
-// }
+void autoIrrigationControl() {
+    int waterValRaw = readWaterLevel(WATER_SENSOR_PIN_1);
+    int waterVal = getWaterLevelMm(waterValRaw); // Quy đổi ra mm
+
+    // 1. Kiểm tra an toàn mực nước (Cạn nước dưới 5mm thì tắt ngay lập tức để bảo vệ phần cứng)
+    if (waterVal < 5) { 
+        if (digitalRead(PUMP_PIN) == HIGH) {
+            digitalWrite(PUMP_PIN, LOW);
+            Serial.println("TỰ ĐỘNG NGẮT: Bể hết nước! Ngắt bơm chống cháy.");
+            
+            // Gửi trạng thái tắt bơm lập tức về Server để đồng bộ giao diện
+            String macAddress = WiFi.macAddress();
+            macAddress.replace(":", ""); 
+            String topic = "smartgarden/devices/" + macAddress + "/data";
+            String immediatePayload = "{\"pumpState\":0,\"waterLevel1\":" + String(waterVal) + "}";
+            client.publish(topic.c_str(), immediatePayload.c_str());
+        }
+        return; 
+    }
+}
 
 void setup() {
     Serial.begin(115200);
@@ -137,7 +160,7 @@ void loop() {
     client.loop();
 
     // Chạy logic tự động kiểm tra và điều khiển bơm liên tục
-    // autoIrrigationControl();
+    autoIrrigationControl();
 
     // Gửi dữ liệu các cảm biến lên Server định kỳ
     unsigned long now = millis();
@@ -183,7 +206,8 @@ void loop() {
         }
 
         // ---- NƯỚC 1 (Gửi ngầm lên để Server lưu trữ) ----
-        int water1 = readWaterLevel(WATER_SENSOR_PIN_1);
+        int water1Raw = readWaterLevel(WATER_SENSOR_PIN_1);
+        int water1 = getWaterLevelMm(water1Raw);
         if (water1 >= 0) {
             if (!firstField) payload += ",";
             payload += "\"waterLevel1\":" + String(water1);
@@ -205,6 +229,12 @@ void loop() {
             payload += "\"lightIntensity2\":" + String(light2, 1);
             firstField = false;
         }
+
+        // ---- TRẠNG THÁI MÁY BƠM (Đồng bộ giao diện) ----
+        int currentPumpState = digitalRead(PUMP_PIN);
+        if (!firstField) payload += ",";
+        payload += "\"pumpState\":" + String(currentPumpState);
+        firstField = false;
 
         payload += "}";
 
